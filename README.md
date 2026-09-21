@@ -42,8 +42,9 @@ xWeek stores its data as database records. There are a few tables:
 xWeek uses a web-based gui to take user input and show the calendar. The user can add, modify and remove tasks manually from the gui.
 
 # Technical Stack
-xWeek uses typescript and express for the backend and it uses react for the gui. 
+xWeek uses Typescript and Express for the backend and it uses react for the gui. 
 
 # Usage
 `npm run dev` - runs a dev server that refreshes files immediately when they are edited
+
 `npm run build` - exports the project's file to a `out` directory that can be served via nginx
