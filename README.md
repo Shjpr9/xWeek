@@ -28,7 +28,7 @@ Tell xWeek what you need to do, and it adds, changes, or removes tasks in your c
 - **Smart task breakdown.** Large tasks are split into smaller ones and spread across days, only when it makes sense.
 - **Schedule-aware answers.** Ask about free time or feasibility; xWeek reads your current tasks before answering.
 - **Sensible defaults.** Vague requests (e.g. "a meeting with Josh") get placed in a fitting free slot.
-- **Web GUI.** View your calendar and add, edit, or delete tasks manually, no chat required.
+- **Web GUI.** View your week or month in a Persian or Gregorian calendar, and add, edit, or delete tasks manually.
 - **Bring your own model.** Works with any OpenAI-compatible API.
 
 ## Examples
@@ -66,6 +66,9 @@ erDiagram
         text title
         int total_minutes
         text recurrence_rule
+        text starts_on
+        text start_time
+        text end_time
         text materialized_until
     }
     TASKS {
@@ -114,7 +117,7 @@ Dates are stored as `YYYY-MM-DD` and times as `HH:MM` in the user's local time, 
 
 | You say | Stored as |
 | --- | --- |
-| "I go to gym everyday from 19:00 to 21:00" | One `task_groups` row with `recurrence_rule = 'FREQ=DAILY'`, plus a `tasks` row per day up to `materialized_until`. |
+| "I go to gym everyday from 19:00 to 21:00" | One `task_groups` row with `recurrence_rule = 'FREQ=DAILY'`, `starts_on` and template times, plus a `tasks` row per day up to `materialized_until`. |
 | "I need to study 20h in 5 days" | One `task_groups` row with `total_minutes = 1200`, plus five 4-hour `tasks` rows. |
 | "I need to make a meeting with Josh" | A single `tasks` row with no group. |
 | "How much free time do I have per day?" | No writes. Busy time per day is summed from `tasks` and subtracted from the waking hours in `settings`. |
@@ -124,7 +127,7 @@ Dates are stored as `YYYY-MM-DD` and times as `HH:MM` in the user's local time, 
 | Layer | Technology |
 | --- | --- |
 | Backend | TypeScript, Express |
-| Frontend | React |
+| Frontend | React, TanStack Query, [Doran](https://github.com/amiralibg/Doran) for the Persian calendar |
 | Database | SQLite (schema in [`schema.sql`](schema.sql)) |
 | AI | Any OpenAI-compatible API |
 
@@ -145,8 +148,6 @@ npm install
 
 ### Configure
 
-<!-- TODO: replace with the real variable names your project reads -->
-
 Set your API credentials before starting the app, for example in a `.env` file:
 
 ```env
@@ -156,6 +157,7 @@ OPENAI_MODEL=your-model-name
 ```
 
 Change the base URL to point at any other OpenAI-compatible provider.
+Chat requires `OPENAI_API_KEY`; the server listens on `127.0.0.1` by default. Do not expose it publicly without authentication.
 
 ### Run
 
@@ -163,15 +165,18 @@ Change the base URL to point at any other OpenAI-compatible provider.
 npm run dev
 ```
 
-Then open the URL printed in your terminal.
+Then open the Vite URL printed in your terminal (normally `http://localhost:5173`). The Persian calendar is selected by default; use the toggle to switch to Gregorian.
 
 ## Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Starts a development server that reloads instantly when files change. |
-| `npm run build` | Exports the project to an `out` directory, ready to be served with nginx. |
+| `npm run dev` | Starts the API and Vite development server with hot reload. |
+| `npm run check:ai` | Checks the configured AI model's connection and function calling. |
+| `npm run build` | Builds `out/client` and `out/server`, plus the schema and migrations. |
+| `npm start` | Runs the built Node API server. |
+| `npm test` | Runs the test suite. |
 
 ## Deployment
 
-Run `npm run build` and serve the generated `out` directory with nginx (or any static file server).
+Run `npm run build` and `npm start` for the API. Serve `out/client` with nginx and proxy `/api` to the Node server; [`docs/nginx.conf`](docs/nginx.conf) is a local-only example. Configure authentication before exposing xWeek publicly.

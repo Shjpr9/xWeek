@@ -48,7 +48,7 @@ Tests live next to the code as `*.test.ts`.
 
 | Command                              | What it does                                                                                                  |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                        | Runs Express (`tsx watch`) and the Vite dev server together, with hot reload. Vite proxies `/api` to Express. |
+| `npm run dev`                        | Runs Express (`node --watch --import tsx`) and the Vite dev server together, with hot reload. Vite proxies `/api` to Express. |
 | `npm run build`                      | Typechecks, then writes `out/client` (static files for nginx) and `out/server` (compiled JS).                 |
 | `npm start`                          | Runs `out/server`.                                                                                            |
 | `npm test`                           | `vitest run`                                                                                                  |
@@ -60,7 +60,7 @@ Commit `.env.example`, git-ignore `.env`, `data/` and `out/`. Variables: `OPENAI
 
 ## Database rules
 
-- On startup, if `PRAGMA user_version` is 0, run `schema.sql` in a transaction and set `user_version = 1`. Later changes go in `migrations/NNNN_name.sql`, each bumping `user_version`. Never edit an applied migration.
+- On startup, if `PRAGMA user_version` is 0, run `schema.sql` in a transaction and set `user_version` to the current schema version (2). Later changes go in `migrations/NNNN_name.sql`, each bumping `user_version`. Never edit an applied migration.
 - On every connection, outside any transaction: `PRAGMA foreign_keys = ON` and WAL mode.
 - Parameterized queries only. Never build SQL from strings.
 - Dates are `YYYY-MM-DD` and times `HH:MM`, in the user's local time (`settings.timezone`). Never do arithmetic with JS `Date` on these. Use helpers in `shared/time.ts` (`toMinutes`, `fromMinutes`, `addDays`, `weekRange`, ...). "Today" and "now" come from `settings.timezone` (via `Intl`), not the server's zone. `HH:MM` strings compare correctly with `<` and `>`.

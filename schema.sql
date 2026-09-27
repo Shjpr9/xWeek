@@ -36,6 +36,9 @@ CREATE TABLE task_groups (
     description       TEXT,
     total_minutes     INTEGER CHECK (total_minutes > 0),  -- for split goals; NULL otherwise
     recurrence_rule   TEXT,                               -- iCalendar RRULE, e.g. 'FREQ=WEEKLY;BYDAY=MO,WE,FR'
+    starts_on         TEXT,                               -- recurring template's first local date
+    start_time        TEXT,                               -- recurring template's local daily time
+    end_time          TEXT,
     materialized_until TEXT,                              -- recurring tasks exist up to this date (inclusive)
     created_by        TEXT    NOT NULL DEFAULT 'user' CHECK (created_by IN ('user', 'ai')),
     created_at        TEXT    NOT NULL DEFAULT (datetime('now'))

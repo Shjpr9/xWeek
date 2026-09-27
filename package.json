@@ -7,11 +7,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "concurrently -k \"tsx watch src/server/index.ts\" \"vite\"",
-    "dev:server": "tsx watch src/server/index.ts",
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "node --watch --import tsx src/server/index.ts",
     "dev:client": "vite",
-    "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
+    "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json && mkdir -p out/migrations && cp schema.sql out/schema.sql && cp migrations/*.sql out/migrations/",
     "start": "node out/server/server/index.js",
+    "check:ai": "node scripts/check-ai.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.client.json --noEmit",
@@ -20,19 +21,24 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@doranjs/core": "^0.3.0",
+    "@tanstack/react-query": "^5.103.2",
+    "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
+    "openai": "^7.23.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "rrule": "^2.8.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "concurrently": "^10.0.5",
     "eslint": "^10.11.0",
     "prettier": "^3.9.8",
     "tsx": "^4.23.15",
