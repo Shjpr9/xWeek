@@ -7,6 +7,11 @@ Tell xWeek what you need to do, and it adds, changes, or removes tasks in your c
 > "I need to study 20h in 5 days" → xWeek creates five 4-hour study blocks.
 
 ---
+# Screenshots
+<img width="1891" height="867" alt="Screenshot_27-Sep_17-29-32_11560" src="https://github.com/user-attachments/assets/d53f466a-0334-422d-b5b2-e8a418035946" />
+<img width="1857" height="831" alt="Screenshot_27-Sep_17-29-49_13090" src="https://github.com/user-attachments/assets/b654406e-d6f5-46c5-9bc2-0a9ff6ac1051" />
+
+---
 
 ## Table of Contents
 
