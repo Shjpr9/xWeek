@@ -26,9 +26,12 @@ Tell xWeek what you need to do, and it adds, changes, or removes tasks in your c
 - **Natural-language planning.** Describe your week the way you would to an assistant.
 - **Full task control.** The AI can add, modify, and remove tasks in the database.
 - **Smart task breakdown.** Large tasks are split into smaller ones and spread across days, only when it makes sense.
+- **Local datetime tools.** Temporal Cortex helps the assistant resolve relative dates, convert timezones, calculate durations, and adjust timestamps. Planning instructions require checking xWeek availability before scheduling.
 - **Schedule-aware answers.** Ask about free time or feasibility; xWeek reads your current tasks before answering.
 - **Sensible defaults.** Vague requests (e.g. "a meeting with Josh") get placed in a fitting free slot.
-- **Web GUI.** View your week or month in a Persian or Gregorian calendar, and add, edit, or delete tasks manually.
+- **Web GUI.** View your week or month in a Persian or Gregorian calendar, and add, edit, or delete tasks manually. AI replies render common Markdown; start a new chat to clear conversation history without removing tasks.
+- **Clear your schedule.** The Danger zone at the bottom deletes all local tasks and recurring schedules after confirmation. Google Calendar stays connected, and its events can be imported again.
+- **Manual Google Calendar sync.** Connect your primary calendar, then import or export the displayed dates using the buttons or ask the assistant to sync a date range.
 - **Bring your own model.** Works with any OpenAI-compatible API.
 
 ## Examples
@@ -154,10 +157,55 @@ Set your API credentials before starting the app, for example in a `.env` file:
 OPENAI_API_KEY=your-key-here
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=your-model-name
+TZ=Asia/Tehran
 ```
 
 Change the base URL to point at any other OpenAI-compatible provider.
+`TZ` sets xWeek's calendar timezone on each server start, including existing databases. Omit it to keep the saved timezone. Existing tasks keep their stored local dates and times.
 Chat requires `OPENAI_API_KEY`; the server listens on `127.0.0.1` by default. Do not expose it publicly without authentication.
+
+### Local planning tools (optional)
+
+The root `.mcp.json` configures a local Temporal Cortex process:
+
+```json
+{
+  "mcpServers": {
+    "temporal-cortex": {
+      "command": "npx",
+      "args": ["--no-install", "@temporal-cortex/cortex-mcp"]
+    }
+  }
+}
+```
+
+`npm install` installs the MCP SDK and the platform-specific Cortex binary. When AI is configured, xWeek starts the process once, discovers its tools, and exposes these five to the assistant: `get_temporal_context`, `resolve_datetime`, `convert_timezone`, `compute_duration`, and `adjust_timestamp`. Calls run locally without calendar OAuth; the AI model still uses your configured provider. xWeek passes its saved timezone (set by `TZ` at startup) and week-start preference to Cortex, disables its telemetry, validates tool inputs, and closes the process when the server stops. The `--no-install` flag avoids downloading packages when launching the server.
+
+The assistant follows a planning workflow: establish the date and deadline, resolve relative times, read xWeek's free windows, fit the requested duration, then create tasks. Datetime tools provide time calculations; availability comes from xWeek's own tasks. Google Calendar sync stays manual through the existing buttons and tools.
+
+The integration reads only the `temporal-cortex` entry. Remove that entry or `.mcp.json` and restart to disable it. If startup fails, the server logs a warning and the assistant continues with its built-in task tools. Planning instructions live in `src/server/ai/prompts.ts`, adapted for xWeek from the [Temporal Cortex datetime workflow](https://github.com/temporal-cortex/skills/tree/main/skills/temporal-cortex-datetime). See [Temporal Cortex documentation](https://github.com/temporal-cortex/mcp) for the underlying tools.
+
+### Google Calendar (optional)
+
+Enable the [Google Calendar API](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) in a Google Cloud project, configure its OAuth consent screen (add your account as a test user if needed), and create an OAuth client with application type **Web application**. Register this exact authorized redirect URI for development:
+
+```text
+http://localhost:5173/api/google-calendar/callback
+```
+
+Set the credentials in `.env`, then restart xWeek:
+
+```env
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:5173/api/google-calendar/callback
+```
+
+For deployment, use the public frontend URL with `/api/google-calendar/callback` and register that exact URL in Google. Open xWeek on the same origin as the redirect URI. Click **Connect Google Calendar**, grant access, then use **Google Calendar → xWeek** or **xWeek → Google Calendar**. Both buttons sync only the displayed dates, up to 367 days per request. The assistant also has `sync_from_google_calendar` and `sync_to_google_calendar` tools with `from` and `to` dates; it syncs only when asked. Exports queued by the assistant execute after its reply is ready, and append the actual sync result. Local edits remain saved if an export fails; retrying does not create duplicates.
+
+The selected direction wins for matching items. Recurring Google events import as individual tasks. All-day events occupy the configured waking hours. Events spanning multiple local days and events that conflict with existing tasks are skipped and reported. Deleting or cancelling items does not delete the other copy. A subsequent Google Calendar import recreates tasks deleted from xWeek if their Google events still exist. Disconnect removes the stored refresh token; links remain so reconnecting the same calendar preserves matching. You can revoke Google's authorization in your Google account settings. Tokens stay on the server in SQLite; protect the database file and backups.
+
+The implementation follows Google's [web server OAuth flow](https://developers.google.com/identity/protocols/oauth2/web-server) and [Calendar events API](https://developers.google.com/workspace/calendar/api/v3/reference/events).
 
 ### Run
 
